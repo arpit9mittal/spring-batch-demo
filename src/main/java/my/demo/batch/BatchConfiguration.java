@@ -19,6 +19,7 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
@@ -156,6 +157,18 @@ public class BatchConfiguration {
 				.build();
 	}
 	
+	@Bean
+	public ItemProcessor<Trade, Trade> processor() {
+		return new ItemProcessor<Trade, Trade>() {
+
+			@Override
+			public Trade process(Trade item) throws Exception {
+				item.setProcessed(true);
+				return item;
+			}
+		};
+	}
+	
 	
 //	@Bean
 //	public Step multilineStep(
@@ -170,17 +183,19 @@ public class BatchConfiguration {
 //			.build();
 //	}
 	
+	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Bean
 	public Step multilineStep(
 			AggregateItemReader reader, 
-			StepItemReadListener itemReadListener, 
-			FlatFileItemWriter writer) {
+			ItemProcessor processor,
+			FlatFileItemWriter writer,
+			StepItemReadListener itemReadListener) {
 		return stepBuilderFactory.get("multiLineStep")
-				.chunk(1)
+				.chunk(2)
 				.reader(reader)
 				.writer(writer)
-//				.listener(itemReadListener)
+				.processor(processor)
 				.build();
 	}
 	

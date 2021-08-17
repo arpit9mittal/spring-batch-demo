@@ -32,6 +32,7 @@ public class Trade implements Serializable {
     private String customer = "";
 	private Long id;
 	private long version = 0;
+	private boolean processed = false;
 
     public Trade() {
     }
@@ -97,8 +98,18 @@ public class Trade implements Serializable {
     public String getCustomer() {
         return customer;
     }
+    
+    
 
-    @Override
+    public boolean isProcessed() {
+		return processed;
+	}
+
+	public void setProcessed(boolean processed) {
+		this.processed = processed;
+	}
+
+	@Override
 	public String toString() {
         return "Trade: [isin=" + this.isin + ",quantity=" + this.quantity + ",price="
             + this.price + ",customer=" + this.customer + "]";
