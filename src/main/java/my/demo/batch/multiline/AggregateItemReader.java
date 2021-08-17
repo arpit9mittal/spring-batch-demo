@@ -21,7 +21,10 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.ItemStreamException;
+import org.springframework.batch.item.ItemStreamReader;
 import org.springframework.lang.Nullable;
 
 /**
@@ -42,10 +45,10 @@ import org.springframework.lang.Nullable;
  * @author Dave Syer
  * 
  */
-public class AggregateItemReader<T> implements ItemReader<List<T>> {
+public class AggregateItemReader<T> implements ItemStreamReader<List<T>> {
 	private static final Log LOG = LogFactory.getLog(AggregateItemReader.class);
 
-	private ItemReader<AggregateItem<T>> itemReader;
+	private ItemStreamReader<AggregateItem<T>> itemReader;
 
 	/**
 	 * Get the next list of records.
@@ -97,7 +100,7 @@ public class AggregateItemReader<T> implements ItemReader<List<T>> {
 		return true;
 	}
 
-	public void setItemReader(ItemReader<AggregateItem<T>> itemReader) {
+	public void setItemReader(ItemStreamReader<AggregateItem<T>> itemReader) {
 		this.itemReader = itemReader;
 	}
 
@@ -127,5 +130,22 @@ public class AggregateItemReader<T> implements ItemReader<List<T>> {
 		public void setExhausted(boolean exhausted) {
 			this.exhausted = exhausted;
 		}
+	}
+
+	@Override
+	public void open(ExecutionContext executionContext) throws ItemStreamException {
+		itemReader.open(executionContext);
+		
+	}
+
+	@Override
+	public void update(ExecutionContext executionContext) throws ItemStreamException {
+		itemReader.update(executionContext);
+		
+	}
+
+	@Override
+	public void close() throws ItemStreamException {
+		itemReader.close();		
 	}
 }

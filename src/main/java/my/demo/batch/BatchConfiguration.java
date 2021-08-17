@@ -3,7 +3,6 @@ package my.demo.batch;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,12 +30,10 @@ import org.springframework.batch.item.file.transform.PatternMatchingCompositeLin
 import org.springframework.batch.item.file.transform.Range;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.task.TaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.core.io.FileSystemResource;
 
 import my.demo.batch.multiline.AggregateItem;
 import my.demo.batch.multiline.AggregateItemFieldSetMapper;
@@ -59,23 +56,6 @@ public class BatchConfiguration {
 	@Autowired
 	public StepBuilderFactory stepBuilderFactory;
 	
-    @Bean
-    public TaskExecutor taskExecutor(
-    		@Value("${batch.task.executor.pool.size.core}") int poolCoreSize, 
-    		@Value("${batch.task.executor.pool.size.max}") int poolMaxSize, 
-    		@Value("${batch.task.executor.queue.capacity}") int queueCapacity) {
-
-    	ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setThreadNamePrefix("MultiThreaded-");
-
-        executor.setCorePoolSize(poolCoreSize);
-        executor.setMaxPoolSize(poolMaxSize);
-        executor.setQueueCapacity(queueCapacity);
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-        
-        return executor;
-    }
-    
 	@Bean
 	public JobExecution run(
 			JobLauncher jobLauncher, 
@@ -131,7 +111,7 @@ public class BatchConfiguration {
 			{
 	            put("BEGIN*", getTokenizer(null, "1-5"));
 	            put("END*", getTokenizer(null, "1-3"));
-	            put("*",getTokenizer("ISIN,Quantity,Price,Customer", "1-12, 13-15, 16-20, 21-29"));
+	            put("*",getTokenizer("ISIN,Quantity,Price,Customer", "1-12,13-15,16-20,21-29"));
 	        }};
 	        
 		tokenizer.setTokenizers(tokenizers);
@@ -171,22 +151,37 @@ public class BatchConfiguration {
 	public FlatFileItemWriter<Trade> writer() {
 		return new FlatFileItemWriterBuilder<Trade>()
 				.name("itemWriter")
+				.resource(new FileSystemResource("out/sample-response.csv"))
 				.lineAggregator(new PassThroughLineAggregator<Trade>())
 				.build();
 	}
 	
 	
+//	@Bean
+//	public Step multilineStep(
+//			AggregateItemReader<Trade> reader, 
+//			StepItemReadListener itemReadListener, 
+//			FlatFileItemWriter<Trade> writer) {
+//		return stepBuilderFactory.get("multiLineStep")
+//			.<Trade, Trade> chunk(1)
+//			.reader(reader)
+//			.writer(writer)
+//			.listener(itemReadListener)
+//			.build();
+//	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Bean
 	public Step multilineStep(
-			AggregateItemReader<Trade> reader, 
+			AggregateItemReader reader, 
 			StepItemReadListener itemReadListener, 
-			FlatFileItemWriter<Trade> writer) {
+			FlatFileItemWriter writer) {
 		return stepBuilderFactory.get("multiLineStep")
-			.<Trade, Trade> chunk(1)
-			.reader(reader)
-			.writer(writer)
-			.listener(itemReadListener)
-			.build();
+				.chunk(1)
+				.reader(reader)
+				.writer(writer)
+//				.listener(itemReadListener)
+				.build();
 	}
 	
 	@Bean
