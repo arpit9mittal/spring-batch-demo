@@ -4,14 +4,69 @@ spring:
  
   batch:    jdbc:      initialize-schema: always
       
+# so that your jobs are not run automatically.      
+    job:      enabled: false
+    
+#  h2:#    console:#      enabled: true
+#      path: /h2
+  
   datasource:    url: jdbc:h2:file:C:/dev/data/batchdb
     driver-class-name: org.h2.Driver
-#    username:
-    hikari:
-      connection-timeout: 2000 
-      maximum-pool-size: 10
-      pool-name: my-pool
+#    username: as
+#    hikari:
+#      connection-timeout: 2000 
+#      maximum-pool-size: 10
+#      pool-name: my-pool
     
-  jpa:    database-platform: org.hibernate.dialect.H2Dialect      
+#  jpa:#    database-platform: org.hibernate.dialect.H2Dialect      
 
     
+batch:
+  file:
+    one:
+      in: sample1-data.csv
+      col: id,firstName,lastName
+    two: 
+      in: sample2-data.csv
+      out: out/sample2-response.csv
+      col: id,firstName,lastName
+      tokenizer:
+        BEGIN:
+          col:
+          range:
+            - 1-5
+        END:
+          col:
+          range:
+            - 1-3
+        BODY:
+          col:
+            - ISIN
+            - Quantity
+            - Price
+            - Customer
+          range:
+            - 1-12
+            - 13-15
+            - 16-20
+            - 21-29
+        
+    multi:
+      record:
+        size: 3
+  step:
+    chunk:
+      size: 5
+  task:
+    executor:
+      pool:
+        size:
+          core: 5
+          max: 10
+      saturation:
+        policy:
+          wait: 1000
+          retry: 2
+      queue:
+        capacity: 5
+  
