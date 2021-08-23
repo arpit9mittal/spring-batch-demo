@@ -5,12 +5,12 @@ import java.time.LocalTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.ItemReadListener;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import a9m.demo.batch.entity.Person;
-
 @Component
-public class StepItemReadListener implements ItemReadListener<Person> {
+@Qualifier("simpleStepItemReadListner")
+public class StepItemReadListener<T> implements ItemReadListener<T> {
 	
 	private static final Logger log = LoggerFactory.getLogger(StepItemReadListener.class);
 
@@ -21,7 +21,7 @@ public class StepItemReadListener implements ItemReadListener<Person> {
 	}
 
 	@Override
-	public void afterRead(Person item) {
+	public void afterRead(T item) {
 		log.info("==> Reader After -> " + LocalTime.now() + " ("+item+")");
 		
 	}

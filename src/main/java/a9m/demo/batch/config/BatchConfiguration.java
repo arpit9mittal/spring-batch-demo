@@ -45,17 +45,17 @@ public class BatchConfiguration {
     }
     
 //    Available Jobs to play with: 
-//    normalJob
-//    asyncJob
-//    multiThreadedJob
-//    asyncMultiRecordJob
-//    multilineJob
+//    1. normalJob
+//    2. asyncJob
+//    3. multiThreadedJob
+//    4. asyncMultiRecordJob
+//    5. multilineJob
     
     
 	@Bean
 	public JobExecution run(
 			JobLauncher jobLauncher, 
-			@Qualifier("normalJob") Job job,
+			@Qualifier("asyncMultiRecordJob") Job job,
 			@Value("${batch.file.one.in}") String sampleInputFile, 
     		@Value("${batch.file.one.col}") String sampleInputFileColumn, 
     		@Value("${batch.file.two.in}") String multiLineInputFile,

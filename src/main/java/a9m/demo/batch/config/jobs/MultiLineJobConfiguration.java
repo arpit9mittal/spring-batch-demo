@@ -4,10 +4,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.ItemReadListener;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemProcessor;
@@ -33,9 +36,9 @@ import a9m.demo.batch.config.readers.TradeFieldSetMapper;
 import a9m.demo.batch.config.readers.multiline.AggregateItem;
 import a9m.demo.batch.config.readers.multiline.AggregateItemFieldSetMapper;
 import a9m.demo.batch.config.readers.multiline.AggregateItemReader;
+import a9m.demo.batch.config.readers.multiline.DequeueItemReader;
 import a9m.demo.batch.config.readers.multiline.MultiLineFileProperties;
 import a9m.demo.batch.entity.Trade;
-import a9m.demo.batch.framework.CustomStepBuilderFactory;
 import a9m.demo.batch.util.BatchUtils;
 
 @Configuration
@@ -46,11 +49,13 @@ public class MultiLineJobConfiguration {
 	private static String TOKENIZER_NAME = "col";
 	private static String TOKENIZER_RANGE = "range";
 
+	private static final Logger log = LoggerFactory.getLogger(MultiLineJobConfiguration.class);
+	
 	@Autowired
 	public JobBuilderFactory jobBuilderFactory;
 
 	@Autowired
-	public CustomStepBuilderFactory stepBuilderFactory;
+	public StepBuilderFactory stepBuilderFactory;
 	
 	@Autowired
 	public MultiLineFileProperties properties;
@@ -128,11 +133,12 @@ public class MultiLineJobConfiguration {
 	}
 	
 	@Bean
-	public AggregateItemReader<Trade> tradeReader(FlatFileItemReader<AggregateItem<Trade>> tradeFileItemReader) {
+	public ItemReader<Trade> tradeReader(FlatFileItemReader<AggregateItem<Trade>> tradeFileItemReader) {
+		
 		AggregateItemReader<Trade> aggregateItemReader = new AggregateItemReader<>();
 		aggregateItemReader.setItemReader(tradeFileItemReader);
 		
-		return aggregateItemReader;
+		return new DequeueItemReader<>(aggregateItemReader);
 	}
 	
 	@Bean
@@ -152,23 +158,24 @@ public class MultiLineJobConfiguration {
 
 			@Override
 			public Trade process(Trade item) throws Exception {
+				log.info("In processor: "+item.getCustomer());
 				item.setProcessed(true);
 				return item;
 			}
 		};
 	}
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Bean
 	public Step multilineStep(
-			@Qualifier("tradeReader") ItemReader reader, 
-			@Qualifier("tradeProcessor") ItemProcessor processor, 
-			@Qualifier("tradeWriter") ItemWriter writer,
-			@Qualifier("itemListReadListener")  ItemReadListener itemReadListener 
+			@Value("${batch.step.chunk.size}") int size ,
+			@Qualifier("tradeReader") ItemReader<Trade> reader, 
+			@Qualifier("tradeProcessor") ItemProcessor<Trade, Trade> processor, 
+			@Qualifier("tradeWriter") ItemWriter<Trade> writer,
+			@Qualifier("simpleStepItemReadListner") ItemReadListener<Trade> itemReadListener 
 			){
 		
 		return stepBuilderFactory.get("multiLineStep")
-			.chunk(1)
+			.<Trade, Trade> chunk(size)
 			.reader(reader)
 			.processor(processor)
 			.writer(writer)

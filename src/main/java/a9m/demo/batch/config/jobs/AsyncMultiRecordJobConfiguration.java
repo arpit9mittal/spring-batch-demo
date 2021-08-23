@@ -1,8 +1,12 @@
 package a9m.demo.batch.config.jobs;
 
+import java.util.concurrent.Future;
+
+import org.springframework.batch.core.ItemReadListener;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
@@ -15,10 +19,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import a9m.demo.batch.config.JobCompletionNotificationListener;
+import a9m.demo.batch.config.readers.multiline.DequeueItemReader;
 import a9m.demo.batch.config.readers.multiline.MultiRecordItemReader;
-import a9m.demo.batch.config.readers.multiline.StepItemReadListListener;
 import a9m.demo.batch.entity.Person;
-import a9m.demo.batch.framework.CustomStepBuilderFactory;
+import a9m.demo.batch.entity.Trade;
 
 @Configuration
 public class AsyncMultiRecordJobConfiguration {
@@ -27,28 +31,27 @@ public class AsyncMultiRecordJobConfiguration {
 	public JobBuilderFactory jobBuilderFactory;
 
 	@Autowired
-	public CustomStepBuilderFactory stepBuilderFactory;
-	
+	public StepBuilderFactory stepBuilderFactory;
 	
 	@Bean
-	public MultiRecordItemReader<Person> multiRecordItemReader(
+	public ItemReader<Person> multiRecordItemReader(
 			@Value("${batch.file.multi.record.size}") int size,
 			@Qualifier("simpleDelimitedReader") FlatFileItemReader<Person> reader) {
 		
-		return new MultiRecordItemReader<Person>(size,reader);
+		MultiRecordItemReader<Person> itemReader = new MultiRecordItemReader<Person>(size,reader);
+		return new DequeueItemReader<>(itemReader);
 	}
 	
-	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Bean
 	public Step asyncMultiRecordStep(
-			StepItemReadListListener itemReadListener, 
-			@Qualifier("asyncWriter") ItemWriter writer,
-			@Qualifier("asyncProcessor") ItemProcessor processor, 
-			@Qualifier("multiRecordItemReader") ItemReader reader ){
-		
+			@Value("${batch.file.multi.record.size}") int size,
+			@Qualifier("multiRecordItemReader") ItemReader<Person> reader,
+			@Qualifier("asyncProcessor") ItemProcessor<Person, Future<Person>> processor,
+			@Qualifier("asyncWriter") ItemWriter<Future<Person>> writer,
+			@Qualifier("simpleStepItemReadListner") ItemReadListener<Trade> itemReadListener) {
+
 		return stepBuilderFactory.get("asyncMultiRecordStep")
-			.chunk(1)
+			.<Person,Future<Person>> chunk(size)
 			.reader(reader)
 			.processor(processor)
 			.writer(writer)

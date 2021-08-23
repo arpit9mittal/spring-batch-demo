@@ -56,7 +56,7 @@ batch:
         size: 3
   step:
     chunk:
-      size: 5
+      size: 2
   task:
     executor:
       pool:
