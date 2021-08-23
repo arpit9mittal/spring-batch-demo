@@ -22,7 +22,6 @@ import a9m.demo.batch.config.JobCompletionNotificationListener;
 import a9m.demo.batch.config.processors.PersonItemProcessor;
 import a9m.demo.batch.config.writers.PersonItemWriter;
 import a9m.demo.batch.entity.Person;
-import a9m.demo.batch.entity.Trade;
 
 @Configuration
 public class AsyncJobConfiguration {
@@ -56,7 +55,7 @@ public class AsyncJobConfiguration {
 	public Step asyncStep(
 			@Value("${batch.step.chunk.size}") int stepChunkSize,
 			@Qualifier("simpleDelimitedReader") FlatFileItemReader<Person> reader, 
-			@Qualifier("simpleStepItemReadListner") ItemReadListener<Trade> itemReadListener,
+			@Qualifier("simpleStepItemReadListner") ItemReadListener<Person> itemReadListener,
 			AsyncItemProcessor<Person, Person> asyncProcessor, 
 			AsyncItemWriter<Person> asyncWriter) {
 		

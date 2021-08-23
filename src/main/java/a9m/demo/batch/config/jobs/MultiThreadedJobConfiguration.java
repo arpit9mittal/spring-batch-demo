@@ -32,7 +32,7 @@ public class MultiThreadedJobConfiguration {
 	public Step multiThreadedStep(
 			@Value("${batch.step.chunk.size}") int stepChunkSize,
 			@Qualifier("simpleDelimitedReader") FlatFileItemReader<Person> reader, 
-			StepItemReadListener itemReadListener, 
+			StepItemReadListener<Person> itemReadListener, 
 			PersonItemProcessor processor,
 			PersonItemWriter  itemWriter,
 			TaskExecutor taskExecutor) {

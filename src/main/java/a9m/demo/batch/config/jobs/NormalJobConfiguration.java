@@ -33,7 +33,7 @@ public class NormalJobConfiguration {
 			@Qualifier("simpleDelimitedReader") FlatFileItemReader<Person> reader, 
 			PersonItemProcessor processor,
 			PersonItemWriter  itemWriter,
-			StepItemReadListener itemReadListener) {
+			StepItemReadListener<Person> itemReadListener) {
 
 		return stepBuilderFactory.get("normalStep")
 			.<Person, Person> chunk(stepChunkSize)
